@@ -10,6 +10,17 @@ import UIKit
 
 class GameViewController: UIViewController, BoardViewControllerDelegate {
     
+    
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        self.updateViews()
+    }
+    private var game = Game(){
+        didSet {
+            boardViewController.board = game.board
+            self.updateViews()
+        }
+    }
     private enum GameState {
         case active(GameBoard.Mark) // Active player
         case cat
@@ -17,27 +28,44 @@ class GameViewController: UIViewController, BoardViewControllerDelegate {
     }
     
     @IBAction func restartGame(_ sender: Any) {
-        board = GameBoard()
-        gameState = .active(.x)
+//        board = GameBoard()
+//        gameState = .active(.x)
+        self.game.restart()
+        self.updateViews()
     }
     
     // MARK: - BoardViewControllerDelegate
     
     func boardViewController(_ boardViewController: BoardViewController, markWasMadeAt coordinate: Coordinate) {
-        guard case let GameState.active(player) = gameState else {
-            NSLog("Game is over")
-            return
-        }
+//        guard case let GameState.active(player) = gameState else {
+//            NSLog("Game is over")
+//            return
+//        }
+//        if game.gameIsOver {
+//            NSLog("Game is over")
+//            return
+//        }
         
         do {
-            try board.place(mark: player, on: coordinate)
-            if game(board: board, isWonBy: player) {
-                gameState = .won(player)
-            } else if board.isFull {
+//            try board.place(mark: player, on: coordinate)
+//            if game(board: board, isWonBy: player) {
+//                gameState = .won(player)
+          
+            try game.makeMark(at: coordinate)
+            if game.gameIsOver {
+                NSLog("Game is over")
+            }
+            if game.gameIsOver && game.winningPlayer != nil {
+                gameState = .won(game.winningPlayer!)
+            } else if game.board.isFull {
                 gameState = .cat
+//            else if board.isFull {
+//                gameState = .cat
+           
             } else {
-                let newPlayer = player == .x ? GameBoard.Mark.o : GameBoard.Mark.x
-                gameState = .active(newPlayer)
+//                let newPlayer = player == .x ? GameBoard.Mark.o : GameBoard.Mark.x
+//                gameState = .active(newPlayer)
+                gameState = .active(game.activePlayer!)
             }
         } catch {
             NSLog("Illegal move")
@@ -63,7 +91,7 @@ class GameViewController: UIViewController, BoardViewControllerDelegate {
     
     override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
         if segue.identifier == "EmbedBoard" {
-            boardViewController = segue.destination as! BoardViewController
+            boardViewController = segue.destination as? BoardViewController
         }
     }
     
@@ -72,7 +100,7 @@ class GameViewController: UIViewController, BoardViewControllerDelegate {
             boardViewController?.delegate = nil
         }
         didSet {
-            boardViewController?.board = board
+            boardViewController?.board = game.board
             boardViewController?.delegate = self
         }
     }
